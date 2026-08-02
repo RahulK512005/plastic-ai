@@ -218,6 +218,18 @@ export const RECYCLER_REQUIRED_DOCUMENTS = [
 
 export const REQUIRED_DOCUMENTS = BRAND_REQUIRED_DOCUMENTS;
 
+/**
+ * Numeric amounts in paise (INR × 100) for each tier/plan combination.
+ * Used server-side when creating Razorpay orders.
+ * tier4 is 0 — requires a custom sales quote and cannot be paid online.
+ */
+export const PRICE_AMOUNTS: Record<string, Record<string, number>> = {
+  tier1: { starter: 4500000, growth: 9500000, enterprise: 16000000 },
+  tier2: { starter: 8500000, growth: 18000000, enterprise: 32000000 },
+  tier3: { starter: 15000000, growth: 31000000, enterprise: 55000000 },
+  tier4: { starter: 0, growth: 0, enterprise: 0 },
+};
+
 export function getRequiredDocuments(registrationType?: RegistrationType) {
   return registrationType === 'brand' ? BRAND_REQUIRED_DOCUMENTS : RECYCLER_REQUIRED_DOCUMENTS;
 }

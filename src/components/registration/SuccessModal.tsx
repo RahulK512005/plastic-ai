@@ -2,45 +2,85 @@
 
 import React from 'react';
 import { motion } from 'motion/react';
-import { CheckCircle2, ShieldCheck, Download, RefreshCw, ArrowRight, Recycle, FileCheck } from 'lucide-react';
-import { RegistrationData } from '../../types/registration';
+import {
+  CheckCircle2,
+  ShieldCheck,
+  Download,
+  RefreshCw,
+  Recycle,
+  CreditCard,
+} from 'lucide-react';
+import { RegistrationData, PaymentResult } from '../../types/registration';
 import { PrimaryButton } from './PrimaryButton';
 import { SecondaryButton } from './SecondaryButton';
 
 interface SuccessModalProps {
   data: RegistrationData;
+  paymentResult: PaymentResult | null;
   onReset: () => void;
   onClose: () => void;
 }
 
+function formatPaise(paise: number): string {
+  const rupees = paise / 100;
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0,
+  }).format(rupees);
+}
+
 export const SuccessModal: React.FC<SuccessModalProps> = ({
   data,
+  paymentResult,
   onReset,
   onClose,
 }) => {
-  const regId = `PNR-2026-${Math.floor(10000 + Math.random() * 90000)}`;
+  // Shorten payment ID for display; fall back gracefully if not yet available
+  const displayOrderId = paymentResult?.razorpayOrderId ?? '—';
+  const displayPaymentId = paymentResult?.razorpayPaymentId ?? '—';
+  const displayAmount = paymentResult ? formatPaise(paymentResult.amountPaid) : '—';
 
   const handleDownloadReceipt = () => {
-    const text = `========================================================\nPUNARVRITT CIRCULAR ECONOMY MARKETPLACE\nREGISTRATION RECEIPT (FRONTEND DEMO)\n========================================================\nRegistration ID: ${regId}\nCompany Name: ${data.companyInfo.companyName || 'EcoPoly Recyclers'}\nRegistration Type: ${data.registrationType.toUpperCase()}\nMaterial Stream: ${data.materialCategory.toUpperCase()}\nCapacity Tier: ${data.capacityTier.toUpperCase()}\nSelected Plan: ${data.subscriptionPlan.toUpperCase()}\nGSTIN: ${data.companyInfo.gstNumber || 'N/A'}\nPAN: ${data.companyInfo.panNumber || 'N/A'}\nState: ${data.companyInfo.state || 'N/A'}\nStatus: VERIFIED & PENDING CPCB SYNC\n========================================================`;
-    const blob = new Blob([text], { type: 'text/plain' });
+    const lines = [
+      '========================================================',
+      'PUNARVRITT CIRCULAR ECONOMY MARKETPLACE',
+      'PAYMENT & REGISTRATION RECEIPT',
+      '========================================================',
+      `Razorpay Order ID  : ${displayOrderId}`,
+      `Razorpay Payment ID: ${displayPaymentId}`,
+      `Amount Paid        : ${displayAmount}`,
+      `Company Name       : ${data.companyInfo.companyName}`,
+      `Registration Type  : ${data.registrationType.toUpperCase()}`,
+      `Material Stream    : ${data.materialCategory.toUpperCase()}`,
+      `Capacity Tier      : ${data.capacityTier.toUpperCase()}`,
+      `Selected Plan      : ${data.subscriptionPlan.toUpperCase()} PLAN`,
+      `GSTIN              : ${data.companyInfo.gstNumber}`,
+      `PAN                : ${data.companyInfo.panNumber}`,
+      `State              : ${data.companyInfo.state}`,
+      `Status             : PAYMENT CAPTURED — PENDING CPCB VERIFICATION`,
+      '========================================================',
+    ];
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${regId}_Punarvritt_Registration.txt`;
+    a.download = `${displayPaymentId}_Punarvritt_Receipt.txt`;
     a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-[60] bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 border border-[#D6E8DE] shadow-2xl relative text-center overflow-hidden"
       >
-        {/* Background glow circle */}
+        {/* Background glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-[#ECFDF5] rounded-full blur-2xl pointer-events-none" />
 
-        {/* Success Icon */}
+        {/* Icon */}
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
@@ -52,61 +92,68 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
 
         {/* Heading */}
         <h2 className="text-2xl sm:text-3xl font-black text-[#0F172A] tracking-tight mb-2 relative z-10">
-          Registration Submitted Successfully
+          Payment Successful!
         </h2>
-
-        {/* Frontend Demo Badge */}
-        <div className="inline-block mb-6 relative z-10">
-          <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold border border-amber-300 shadow-xs">
-            (Frontend Demo)
-          </span>
-        </div>
-
         <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-md mx-auto mb-6 relative z-10">
-          Your company onboarding request has been processed locally. A confirmation copy and compliance checklist have been saved to your session draft.
+          Your payment has been captured and your registration is now pending CPCB verification. You
+          will receive a confirmation email shortly.
         </p>
 
-        {/* Registration ID Banner */}
+        {/* Payment details card */}
         <div className="bg-[#FAFAF8] border border-[#D6E8DE] rounded-2xl p-4 mb-6 text-left relative z-10 space-y-3">
+          {/* Header */}
           <div className="flex items-center justify-between pb-2 border-b border-[#D6E8DE]">
             <div className="flex items-center gap-2 text-xs font-bold text-[#0F766E]">
-              <ShieldCheck className="w-4 h-4" />
-              <span>CPCB Reference ID</span>
+              <CreditCard className="w-4 h-4" />
+              <span>Payment Confirmation</span>
             </div>
-            <span className="font-mono text-xs font-bold text-[#0F172A] bg-emerald-100 px-2 py-0.5 rounded">
-              {regId}
+            <span className="font-mono text-[10px] font-bold text-[#0F172A] bg-emerald-100 px-2 py-0.5 rounded truncate max-w-[160px]">
+              {displayPaymentId}
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          {/* Details grid */}
+          <div className="grid grid-cols-2 gap-3 text-xs">
             <div>
               <span className="text-slate-400 font-medium block">Company</span>
               <span className="font-bold text-[#0F172A] truncate block">
-                {data.companyInfo.companyName || 'EcoPoly Recyclers Pvt Ltd'}
+                {data.companyInfo.companyName}
               </span>
+            </div>
+            <div>
+              <span className="text-slate-400 font-medium block">Amount Paid</span>
+              <span className="font-bold text-[#16A34A] text-sm">{displayAmount}</span>
             </div>
             <div>
               <span className="text-slate-400 font-medium block">Account Type</span>
               <span className="font-bold text-[#0F766E] capitalize">
-                {data.registrationType} • {data.materialCategory}
+                {data.registrationType} · {data.materialCategory}
               </span>
             </div>
             <div>
-              <span className="text-slate-400 font-medium block">Capacity Band</span>
-              <span className="font-bold text-[#0F172A] uppercase">
-                {data.capacityTier}
-              </span>
-            </div>
-            <div>
-              <span className="text-slate-400 font-medium block">Plan Chosen</span>
+              <span className="text-slate-400 font-medium block">Plan</span>
               <span className="font-bold text-[#0F172A] capitalize">
-                {data.subscriptionPlan} Plan
+                {data.subscriptionPlan} · {data.capacityTier.toUpperCase()}
+              </span>
+            </div>
+            <div className="col-span-2">
+              <span className="text-slate-400 font-medium block">Order ID</span>
+              <span className="font-mono font-bold text-[10px] text-slate-600 break-all">
+                {displayOrderId}
               </span>
             </div>
           </div>
+
+          {/* Status badge */}
+          <div className="flex items-center gap-2 pt-2 border-t border-[#D6E8DE]">
+            <ShieldCheck className="w-4 h-4 text-[#0F766E]" />
+            <span className="text-xs font-bold text-[#0F766E]">
+              Registration Submitted — Pending CPCB Verification
+            </span>
+          </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Actions */}
         <div className="space-y-3 relative z-10">
           <PrimaryButton
             onClick={handleDownloadReceipt}
@@ -114,7 +161,7 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
             size="lg"
             icon={<Download className="w-5 h-5" />}
           >
-            Download Registration Summary
+            Download Payment Receipt
           </PrimaryButton>
 
           <div className="grid grid-cols-2 gap-3">
@@ -124,7 +171,7 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
               size="md"
               icon={<RefreshCw className="w-4 h-4 text-slate-500" />}
             >
-              Start New Wizard
+              New Registration
             </SecondaryButton>
 
             <SecondaryButton

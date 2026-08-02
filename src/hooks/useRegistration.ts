@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useCallback } from 'react';
 import {
   RegistrationData,
@@ -7,6 +9,7 @@ import {
   SubscriptionPlanId,
   CompanyInfo,
   UploadedDocument,
+  PaymentResult,
 } from '../types/registration';
 
 const STORAGE_KEY = 'punarvritt_registration_draft_v1';
@@ -45,10 +48,24 @@ const initialRegistrationData: RegistrationData = {
   subscriptionPlan: 'growth',
 };
 
+/** Dynamically injects the Razorpay checkout.js script once. */
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') return resolve(false);
+    if ((window as unknown as { Razorpay?: unknown }).Razorpay) return resolve(true);
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
 export function useRegistration() {
   const [step, setStep] = useState<number>(1);
   const [data, setData] = useState<RegistrationData>(initialRegistrationData);
 
+  // Restore draft from localStorage on mount
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -61,7 +78,7 @@ export function useRegistration() {
         }));
       }
     } catch {
-      // ignore
+      // ignore parse errors
     }
   }, []);
 
@@ -69,6 +86,9 @@ export function useRegistration() {
   const [saveToast, setSaveToast] = useState<boolean>(false);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isPaymentLoading, setIsPaymentLoading] = useState<boolean>(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [paymentResult, setPaymentResult] = useState<PaymentResult | null>(null);
 
   // Auto-save draft changes to localStorage
   useEffect(() => {
@@ -78,6 +98,8 @@ export function useRegistration() {
       // ignore
     }
   }, [data]);
+
+  // ── Setters ─────────────────────────────────────────────────────────────────
 
   const setRegistrationType = (type: RegistrationType) => {
     setData((prev) => ({ ...prev, registrationType: type }));
@@ -92,10 +114,7 @@ export function useRegistration() {
   const updateCompanyInfo = (field: keyof CompanyInfo, value: string) => {
     setData((prev) => ({
       ...prev,
-      companyInfo: {
-        ...prev.companyInfo,
-        [field]: value,
-      },
+      companyInfo: { ...prev.companyInfo, [field]: value },
     }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: '' }));
@@ -110,14 +129,15 @@ export function useRegistration() {
     setData((prev) => ({ ...prev, subscriptionPlan: plan }));
   };
 
-  // Frontend simulated document upload with animated progress
+  // ── Document Upload ──────────────────────────────────────────────────────────
+
   const uploadDocument = useCallback((docType: string, file: File) => {
-    const docId = docType;
     const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
-    const fileSize = file.size > 1024 * 1024 ? `${sizeInMB} MB` : `${Math.round(file.size / 1024)} KB`;
+    const fileSize =
+      file.size > 1024 * 1024 ? `${sizeInMB} MB` : `${Math.round(file.size / 1024)} KB`;
 
     const newDoc: UploadedDocument = {
-      id: docId,
+      id: docType,
       type: docType as UploadedDocument['type'],
       fileName: file.name,
       fileSize,
@@ -129,30 +149,21 @@ export function useRegistration() {
 
     setData((prev) => ({
       ...prev,
-      documents: {
-        ...prev.documents,
-        [docType]: newDoc,
-      },
+      documents: { ...prev.documents, [docType]: newDoc },
     }));
 
-    // Animate progress smoothly
     let currentProgress = 10;
     const interval = setInterval(() => {
       currentProgress += Math.floor(Math.random() * 25) + 15;
       if (currentProgress >= 100) {
         currentProgress = 100;
         clearInterval(interval);
-
         setData((prev) => ({
           ...prev,
           documents: {
             ...prev.documents,
             [docType]: prev.documents[docType]
-              ? {
-                  ...prev.documents[docType]!,
-                  uploadProgress: 100,
-                  status: 'completed',
-                }
+              ? { ...prev.documents[docType]!, uploadProgress: 100, status: 'completed' }
               : null,
           },
         }));
@@ -162,10 +173,7 @@ export function useRegistration() {
           documents: {
             ...prev.documents,
             [docType]: prev.documents[docType]
-              ? {
-                  ...prev.documents[docType]!,
-                  uploadProgress: currentProgress,
-                }
+              ? { ...prev.documents[docType]!, uploadProgress: currentProgress }
               : null,
           },
         }));
@@ -176,25 +184,19 @@ export function useRegistration() {
   const removeDocument = useCallback((docType: string) => {
     setData((prev) => ({
       ...prev,
-      documents: {
-        ...prev.documents,
-        [docType]: null,
-      },
+      documents: { ...prev.documents, [docType]: null },
     }));
   }, []);
 
-  // Validation function per step
+  // ── Validation ───────────────────────────────────────────────────────────────
+
   const validateCurrentStep = (stepToValidate: number = step): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (stepToValidate === 1) {
-      if (!data.registrationType) {
-        newErrors.registrationType = 'Please select a registration type';
-      }
+      if (!data.registrationType) newErrors.registrationType = 'Please select a registration type';
     } else if (stepToValidate === 2) {
-      if (!data.materialCategory) {
-        newErrors.materialCategory = 'Please select a material category';
-      }
+      if (!data.materialCategory) newErrors.materialCategory = 'Please select a material category';
     } else if (stepToValidate === 3) {
       const c = data.companyInfo;
       if (!c.companyName.trim()) newErrors.companyName = 'Company name is required';
@@ -210,7 +212,9 @@ export function useRegistration() {
       }
       if (!c.gstNumber.trim()) {
         newErrors.gstNumber = 'GST Number is required';
-      } else if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/i.test(c.gstNumber.trim())) {
+      } else if (
+        !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/i.test(c.gstNumber.trim())
+      ) {
         newErrors.gstNumber = 'Invalid GST format (e.g. 22AAAAA0000A1Z5)';
       }
       if (!c.panNumber.trim()) {
@@ -229,27 +233,37 @@ export function useRegistration() {
       if (!c.contactPerson.trim()) newErrors.contactPerson = 'Contact person name is required';
       if (!c.designation.trim()) newErrors.designation = 'Designation is required';
     } else if (stepToValidate === 4) {
-      // Required documents per entity type (Brand: 6 documents; Recycler: 9 documents)
-      const reqDocs = data.registrationType === 'brand'
-        ? ['gst', 'pan', 'factory_license', 'coi_cert', 'epr_cert', 'cancelled_cheque']
-        : ['gst', 'pan', 'factory_license', 'pollution_cert', 'coi_cert', 'auth_letter', 'cancelled_cheque', 'recycler_cert', 'epr_cert'];
-      const missing = reqDocs.filter((type) => !data.documents[type] || data.documents[type]?.status !== 'completed');
+      const reqDocs =
+        data.registrationType === 'brand'
+          ? ['gst', 'pan', 'factory_license', 'coi_cert', 'epr_cert', 'cancelled_cheque']
+          : [
+              'gst',
+              'pan',
+              'factory_license',
+              'pollution_cert',
+              'coi_cert',
+              'auth_letter',
+              'cancelled_cheque',
+              'recycler_cert',
+              'epr_cert',
+            ];
+      const missing = reqDocs.filter(
+        (type) => !data.documents[type] || data.documents[type]?.status !== 'completed',
+      );
       if (missing.length > 0) {
         newErrors.documents = `Please upload all ${reqDocs.length} required mandatory documents before continuing`;
       }
     } else if (stepToValidate === 5) {
-      if (!data.capacityTier) {
-        newErrors.capacityTier = 'Please select a capacity tier';
-      }
+      if (!data.capacityTier) newErrors.capacityTier = 'Please select a capacity tier';
     } else if (stepToValidate === 6) {
-      if (!data.subscriptionPlan) {
-        newErrors.subscriptionPlan = 'Please choose a subscription plan';
-      }
+      if (!data.subscriptionPlan) newErrors.subscriptionPlan = 'Please choose a subscription plan';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+  // ── Navigation ───────────────────────────────────────────────────────────────
 
   const nextStep = () => {
     if (validateCurrentStep(step)) {
@@ -272,7 +286,6 @@ export function useRegistration() {
       setStep(targetStep);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      // Validate all previous steps up to target
       let valid = true;
       for (let s = step; s < targetStep; s++) {
         if (!validateCurrentStep(s)) {
@@ -298,11 +311,128 @@ export function useRegistration() {
     }
   };
 
-  const submitRegistration = () => {
-    if (validateCurrentStep(7) || true) {
-      setIsSubmitted(true);
+  // ── Razorpay Payment + Submit ─────────────────────────────────────────────────
+
+  const submitRegistration = async () => {
+    setPaymentError(null);
+    setIsPaymentLoading(true);
+
+    try {
+      // Step 1 — load Razorpay checkout script
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        setPaymentError('Could not load payment gateway. Please check your connection and retry.');
+        setIsPaymentLoading(false);
+        return;
+      }
+
+      // Step 2 — create order on the server
+      const orderRes = await fetch('/api/payment/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          capacityTier: data.capacityTier,
+          subscriptionPlan: data.subscriptionPlan,
+          registrationType: data.registrationType,
+          materialCategory: data.materialCategory,
+          companyInfo: data.companyInfo,
+        }),
+      });
+
+      const orderData = await orderRes.json();
+
+      if (!orderRes.ok) {
+        setPaymentError(orderData.error || 'Failed to initiate payment. Please try again.');
+        setIsPaymentLoading(false);
+        return;
+      }
+
+      const { orderId, amount, currency, companyId, keyId } = orderData;
+
+      // Step 3 — open Razorpay checkout modal
+      const RazorpayConstructor = (window as unknown as { Razorpay: new (opts: object) => { open: () => void } }).Razorpay;
+
+      await new Promise<void>((resolve, reject) => {
+        const rzp = new RazorpayConstructor({
+          key: keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+          amount,
+          currency,
+          order_id: orderId,
+          name: 'Punarvritt Circular Economy',
+          description: `${data.subscriptionPlan.charAt(0).toUpperCase() + data.subscriptionPlan.slice(1)} Plan — ${data.capacityTier.toUpperCase()} Tier`,
+          image: '/next.svg',
+          prefill: {
+            name: data.companyInfo.contactPerson,
+            email: data.companyInfo.companyEmail,
+            contact: data.companyInfo.mobileNumber,
+          },
+          notes: {
+            company: data.companyInfo.companyName,
+            gst: data.companyInfo.gstNumber,
+          },
+          theme: { color: '#0F766E' },
+          modal: {
+            ondismiss: () => {
+              reject(new Error('PAYMENT_DISMISSED'));
+            },
+          },
+          handler: async (response: {
+            razorpay_order_id: string;
+            razorpay_payment_id: string;
+            razorpay_signature: string;
+          }) => {
+            try {
+              // Step 4 — verify signature on the server
+              const verifyRes = await fetch('/api/payment/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  companyId,
+                }),
+              });
+
+              const verifyData = await verifyRes.json();
+
+              if (!verifyRes.ok) {
+                reject(new Error(verifyData.error || 'Payment verification failed.'));
+                return;
+              }
+
+              setPaymentResult({
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                companyId,
+                amountPaid: amount,
+              });
+
+              // Clear draft from localStorage on successful payment
+              localStorage.removeItem(STORAGE_KEY);
+              setIsSubmitted(true);
+              resolve();
+            } catch (err) {
+              reject(err);
+            }
+          },
+        });
+
+        rzp.open();
+      });
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message === 'PAYMENT_DISMISSED') {
+        setPaymentError('Payment was cancelled. You can retry when ready.');
+      } else {
+        const msg = err instanceof Error ? err.message : 'An unexpected error occurred.';
+        setPaymentError(msg);
+      }
+    } finally {
+      setIsPaymentLoading(false);
     }
   };
+
+  // ── Misc ─────────────────────────────────────────────────────────────────────
 
   const resetWizard = () => {
     localStorage.removeItem(STORAGE_KEY);
@@ -310,6 +440,8 @@ export function useRegistration() {
     setStep(1);
     setErrors({});
     setIsSubmitted(false);
+    setPaymentResult(null);
+    setPaymentError(null);
   };
 
   const openWizard = (initialType?: RegistrationType) => {
@@ -331,6 +463,9 @@ export function useRegistration() {
     saveToast,
     isSubmitted,
     isModalOpen,
+    isPaymentLoading,
+    paymentError,
+    paymentResult,
     setRegistrationType,
     setMaterialCategory,
     updateCompanyInfo,

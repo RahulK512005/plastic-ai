@@ -63,3 +63,11 @@ export interface PricingForTier {
   growth: { price: string; period: string };
   enterprise: { price: string; period: string };
 }
+
+/** Returned after a successful Razorpay payment + server-side verification. */
+export interface PaymentResult {
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  companyId: string;
+  amountPaid: number; // in paise
+}
