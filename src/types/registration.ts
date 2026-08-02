@@ -30,6 +30,7 @@ export interface UploadedDocument {
   uploadProgress: number;
   status: 'uploading' | 'completed' | 'error';
   previewUrl?: string;
+  storagePath?: string; // path in Supabase Storage after successful upload
 }
 
 export interface RegistrationData {
@@ -69,5 +70,8 @@ export interface PaymentResult {
   razorpayOrderId: string;
   razorpayPaymentId: string;
   companyId: string;
-  amountPaid: number; // in paise
+  amountPaid: number;       // final amount in paise (after discount)
+  originalAmount: number;   // pre-discount amount in paise
+  discountAmount: number;   // discount applied in paise
+  promoCode?: string;       // promo code used, if any
 }

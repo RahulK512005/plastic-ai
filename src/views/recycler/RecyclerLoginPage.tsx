@@ -10,55 +10,45 @@ import { Button } from '../../components/ui/Button';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Factory, LogIn, ArrowLeft } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
 
 export const RecyclerLoginPage: React.FC = () => {
   const router = useRouter();
 
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    rememberMe: false,
-  });
-
+  const [formData, setFormData] = useState({ email: '', password: '', rememberMe: false });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-
-    if (errors[name]) {
-      setErrors((prev) => {
-        const copy = { ...prev };
-        delete copy[name];
-        return copy;
-      });
-    }
+    setFormData((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    if (errors[name]) setErrors((prev) => { const c = { ...prev }; delete c[name]; return c; });
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newErrors: Record<string, string> = {};
+    const errs: Record<string, string> = {};
+    if (!formData.email.trim()) errs.email = 'Email address is required';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) errs.email = 'Please enter a valid email address';
+    if (!formData.password) errs.password = 'Password is required';
+    if (Object.keys(errs).length) { setErrors(errs); return; }
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email address is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+    setErrors({});
+    setIsLoading(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+      });
+      if (error) { setErrors({ form: 'Invalid email or password. Please try again.' }); return; }
+      router.push('/recycler/dashboard');
+      router.refresh();
+    } catch {
+      setErrors({ form: 'Something went wrong. Please try again.' });
+    } finally {
+      setIsLoading(false);
     }
-
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    // Frontend navigation only
-    router.push('/recycler/dashboard');
   };
 
   return (
@@ -70,7 +60,7 @@ export const RecyclerLoginPage: React.FC = () => {
       <div className="max-w-md mx-auto w-full">
         <Card variant="default" padding="lg" className="shadow-md">
           <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
               <Factory className="w-5 h-5" />
             </div>
             <div>
@@ -96,16 +86,18 @@ export const RecyclerLoginPage: React.FC = () => {
                 <span />
                 <a
                   href="#"
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.preventDefault();
-                    alert('Password reset instructions sent to facility administrator email.');
+                    if (!formData.email) { alert('Enter your email above first.'); return; }
+                    const supabase = createClient();
+                    await supabase.auth.resetPasswordForEmail(formData.email.trim().toLowerCase());
+                    alert('Password reset link sent to your facility email.');
                   }}
                   className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline"
                 >
                   Forgot Password?
                 </a>
               </div>
-
               <PasswordInput
                 label="Password"
                 name="password"
@@ -127,6 +119,12 @@ export const RecyclerLoginPage: React.FC = () => {
               />
             </div>
 
+            {errors.form && (
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">
+                {errors.form}
+              </div>
+            )}
+
             <div className="space-y-3 pt-3">
               <Button
                 type="submit"
@@ -135,10 +133,10 @@ export const RecyclerLoginPage: React.FC = () => {
                 fullWidth
                 icon={<LogIn className="w-4 h-4" />}
                 iconPosition="right"
+                disabled={isLoading}
               >
-                Login to Recycler Dashboard
+                {isLoading ? 'Signing in…' : 'Login to Recycler Dashboard'}
               </Button>
-
               <Button
                 type="button"
                 variant="outline"
@@ -154,11 +152,8 @@ export const RecyclerLoginPage: React.FC = () => {
           </form>
 
           <div className="mt-6 pt-5 border-t border-slate-100 text-center text-xs text-slate-600">
-            <span>Don't have an account? </span>
-            <Link
-              href="/recycler/signup"
-              className="font-bold text-emerald-700 hover:text-emerald-800 hover:underline ml-1"
-            >
+            Don&apos;t have an account?{' '}
+            <Link href="/recycler/signup" className="font-bold text-emerald-700 hover:underline ml-1">
               Create Recycler Account
             </Link>
           </div>

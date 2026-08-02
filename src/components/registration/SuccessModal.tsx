@@ -2,12 +2,12 @@
 
 import React from 'react';
 import { motion } from 'motion/react';
+import { useRouter } from 'next/navigation';
 import {
   CheckCircle2,
   ShieldCheck,
   Download,
-  RefreshCw,
-  Recycle,
+  LayoutDashboard,
   CreditCard,
 } from 'lucide-react';
 import { RegistrationData, PaymentResult } from '../../types/registration';
@@ -22,24 +22,26 @@ interface SuccessModalProps {
 }
 
 function formatPaise(paise: number): string {
-  const rupees = paise / 100;
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
     maximumFractionDigits: 0,
-  }).format(rupees);
+  }).format(paise / 100);
 }
 
 export const SuccessModal: React.FC<SuccessModalProps> = ({
   data,
   paymentResult,
-  onReset,
   onClose,
 }) => {
-  // Shorten payment ID for display; fall back gracefully if not yet available
+  const router = useRouter();
   const displayOrderId = paymentResult?.razorpayOrderId ?? '—';
   const displayPaymentId = paymentResult?.razorpayPaymentId ?? '—';
   const displayAmount = paymentResult ? formatPaise(paymentResult.amountPaid) : '—';
+
+  const dashboardPath = data.registrationType === 'recycler'
+    ? '/recycler/dashboard'
+    : '/brand/dashboard';
 
   const handleDownloadReceipt = () => {
     const lines = [
@@ -70,6 +72,11 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
     URL.revokeObjectURL(url);
   };
 
+  const goToDashboard = () => {
+    onClose();
+    router.push(dashboardPath);
+  };
+
   return (
     <div className="fixed inset-0 z-[60] bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
       <motion.div
@@ -90,18 +97,16 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
           <CheckCircle2 className="w-10 h-10" />
         </motion.div>
 
-        {/* Heading */}
         <h2 className="text-2xl sm:text-3xl font-black text-[#0F172A] tracking-tight mb-2 relative z-10">
           Payment Successful!
         </h2>
         <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-md mx-auto mb-6 relative z-10">
-          Your payment has been captured and your registration is now pending CPCB verification. You
-          will receive a confirmation email shortly.
+          Your payment has been captured and your registration is now pending CPCB verification.
+          You will receive a confirmation email shortly.
         </p>
 
         {/* Payment details card */}
         <div className="bg-[#FAFAF8] border border-[#D6E8DE] rounded-2xl p-4 mb-6 text-left relative z-10 space-y-3">
-          {/* Header */}
           <div className="flex items-center justify-between pb-2 border-b border-[#D6E8DE]">
             <div className="flex items-center gap-2 text-xs font-bold text-[#0F766E]">
               <CreditCard className="w-4 h-4" />
@@ -112,7 +117,6 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
             </span>
           </div>
 
-          {/* Details grid */}
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div>
               <span className="text-slate-400 font-medium block">Company</span>
@@ -124,6 +128,27 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
               <span className="text-slate-400 font-medium block">Amount Paid</span>
               <span className="font-bold text-[#16A34A] text-sm">{displayAmount}</span>
             </div>
+            {paymentResult?.discountAmount && paymentResult.discountAmount > 0 ? (
+              <>
+                <div>
+                  <span className="text-slate-400 font-medium block">Original Price</span>
+                  <span className="font-bold text-slate-400 line-through text-sm">
+                    {formatPaise(paymentResult.originalAmount)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 font-medium block">Promo Saving</span>
+                  <span className="font-bold text-[#16A34A]">
+                    − {formatPaise(paymentResult.discountAmount)}
+                    {paymentResult.promoCode && (
+                      <span className="ml-1 font-mono text-[10px] bg-[#ECFDF5] text-[#0F766E] px-1.5 py-0.5 rounded">
+                        {paymentResult.promoCode}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </>
+            ) : null}
             <div>
               <span className="text-slate-400 font-medium block">Account Type</span>
               <span className="font-bold text-[#0F766E] capitalize">
@@ -144,7 +169,6 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
             </div>
           </div>
 
-          {/* Status badge */}
           <div className="flex items-center gap-2 pt-2 border-t border-[#D6E8DE]">
             <ShieldCheck className="w-4 h-4 text-[#0F766E]" />
             <span className="text-xs font-bold text-[#0F766E]">
@@ -156,33 +180,22 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
         {/* Actions */}
         <div className="space-y-3 relative z-10">
           <PrimaryButton
-            onClick={handleDownloadReceipt}
+            onClick={goToDashboard}
             fullWidth
             size="lg"
-            icon={<Download className="w-5 h-5" />}
+            icon={<LayoutDashboard className="w-5 h-5" />}
           >
-            Download Payment Receipt
+            Go to My Dashboard
           </PrimaryButton>
 
-          <div className="grid grid-cols-2 gap-3">
-            <SecondaryButton
-              onClick={onReset}
-              fullWidth
-              size="md"
-              icon={<RefreshCw className="w-4 h-4 text-slate-500" />}
-            >
-              New Registration
-            </SecondaryButton>
-
-            <SecondaryButton
-              onClick={onClose}
-              fullWidth
-              size="md"
-              icon={<Recycle className="w-4 h-4 text-[#0F766E]" />}
-            >
-              Return Home
-            </SecondaryButton>
-          </div>
+          <SecondaryButton
+            onClick={handleDownloadReceipt}
+            fullWidth
+            size="md"
+            icon={<Download className="w-4 h-4" />}
+          >
+            Download Payment Receipt
+          </SecondaryButton>
         </div>
       </motion.div>
     </div>

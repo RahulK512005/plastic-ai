@@ -16,6 +16,7 @@ export interface CreateOrderRequest {
   subscriptionPlan: SubscriptionPlanId;
   registrationType: 'brand' | 'recycler';
   materialCategory: 'plastic' | 'metal';
+  promoCode?: string;
   companyInfo: {
     companyName: string;
     companyEmail: string;
@@ -34,13 +35,10 @@ export interface CreateOrderRequest {
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Auth — must be signed in
+    // 1. Auth
     const cookieStore = await cookies();
     const supabase = createServerClient(cookieStore);
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json(
@@ -49,26 +47,61 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. Parse and validate body
+    // 2. Parse body
     const body: CreateOrderRequest = await req.json();
-    const { capacityTier, subscriptionPlan, registrationType, materialCategory, companyInfo } = body;
+    const { capacityTier, subscriptionPlan, registrationType, materialCategory, companyInfo, promoCode } = body;
 
     if (!capacityTier || !subscriptionPlan || !companyInfo?.companyName) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
     }
 
-    // 3. Resolve amount (paise = INR × 100). Custom / tier4 not allowed online.
-    const amountInPaise = PRICE_AMOUNTS[capacityTier]?.[subscriptionPlan];
-    if (!amountInPaise || amountInPaise <= 0) {
+    // 3. Resolve base amount
+    const originalAmount = PRICE_AMOUNTS[capacityTier]?.[subscriptionPlan];
+    if (!originalAmount || originalAmount <= 0) {
       return NextResponse.json(
         { error: 'Selected plan requires a custom quote. Please contact sales.' },
         { status: 400 },
       );
     }
 
-    // 4. Create Razorpay order
+    // 4. Apply promo code (re-validated server-side — never trust client amount)
+    const service = createServiceClient();
+    let discountAmount = 0;
+    let validatedPromoCode: string | null = null;
+
+    if (promoCode?.trim()) {
+      const normalizedCode = promoCode.trim().toUpperCase();
+
+      const { data: promo } = await service
+        .from('promo_codes')
+        .select('*')
+        .eq('code', normalizedCode)
+        .eq('is_active', true)
+        .single();
+
+      // Silently ignore invalid codes at order time — amount stays at original
+      // (client already validated; this is a server-side safety re-check)
+      if (
+        promo &&
+        (!promo.valid_until || new Date(promo.valid_until) >= new Date()) &&
+        (promo.max_uses === null || promo.current_uses < promo.max_uses) &&
+        (!promo.applicable_plans?.length || promo.applicable_plans.includes(subscriptionPlan)) &&
+        (!promo.applicable_tiers?.length || promo.applicable_tiers.includes(capacityTier))
+      ) {
+        if (promo.discount_type === 'percentage') {
+          discountAmount = Math.round((originalAmount * promo.discount_value) / 100);
+        } else {
+          discountAmount = Math.min(promo.discount_value, originalAmount);
+        }
+        validatedPromoCode = normalizedCode;
+      }
+    }
+
+    const finalAmount = Math.max(originalAmount - discountAmount, 0);
+
+    // 5. Create Razorpay order with final (discounted) amount
     const order = await razorpay.orders.create({
-      amount: amountInPaise,
+      amount: finalAmount,
       currency: 'INR',
       receipt: `reg_${user.id.slice(0, 8)}_${Date.now()}`,
       notes: {
@@ -76,12 +109,11 @@ export async function POST(req: NextRequest) {
         companyName: companyInfo.companyName,
         plan: subscriptionPlan,
         tier: capacityTier,
+        promoCode: validatedPromoCode ?? '',
       },
     });
 
-    // 5. Upsert draft company row (status = 'draft') via service client (bypasses RLS)
-    const service = createServiceClient();
-
+    // 6. Upsert draft company row
     const { data: company, error: upsertError } = await service
       .from('companies')
       .upsert(
@@ -105,7 +137,9 @@ export async function POST(req: NextRequest) {
           subscription_plan: subscriptionPlan,
           status: 'draft',
           razorpay_order_id: order.id,
-          amount_paid: amountInPaise,
+          amount_paid: finalAmount,
+          promo_code_used: validatedPromoCode,
+          discount_amount: discountAmount,
         },
         { onConflict: 'profile_id' },
       )
@@ -114,29 +148,36 @@ export async function POST(req: NextRequest) {
 
     if (upsertError) {
       console.error('[create-order] upsert company error:', upsertError);
-      return NextResponse.json(
-        { error: 'Failed to save registration draft. Please try again.' },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: 'Failed to save registration draft.' }, { status: 500 });
     }
 
-    // 6. Create payment record (status = 'created')
+    // 7. Create payment record
     const { error: paymentError } = await service.from('payments').insert({
       company_id: company.id,
       razorpay_order_id: order.id,
-      amount: amountInPaise,
+      amount: finalAmount,
+      original_amount: originalAmount,
+      discount_amount: discountAmount,
+      promo_code: validatedPromoCode,
       currency: 'INR',
       status: 'created',
     });
 
     if (paymentError) {
       console.error('[create-order] insert payment error:', paymentError);
-      // Non-fatal — order was still created; proceed
+    }
+
+    // 8. Increment promo usage counter atomically
+    if (validatedPromoCode) {
+      await service.rpc('increment_promo_usage', { p_code: validatedPromoCode });
     }
 
     return NextResponse.json({
       orderId: order.id,
-      amount: amountInPaise,
+      amount: finalAmount,
+      originalAmount,
+      discountAmount,
+      promoApplied: !!validatedPromoCode,
       currency: 'INR',
       companyId: company.id,
       keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,

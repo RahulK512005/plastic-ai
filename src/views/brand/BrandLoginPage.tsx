@@ -10,6 +10,7 @@ import { Button } from '../../components/ui/Button';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Building2, LogIn, ArrowLeft } from 'lucide-react';
+import { createClient } from '@/utils/supabase/client';
 
 export const BrandLoginPage: React.FC = () => {
   const router = useRouter();
@@ -21,6 +22,7 @@ export const BrandLoginPage: React.FC = () => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -38,7 +40,7 @@ export const BrandLoginPage: React.FC = () => {
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
 
@@ -47,18 +49,33 @@ export const BrandLoginPage: React.FC = () => {
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-
     if (!formData.password) {
       newErrors.password = 'Password is required';
     }
-
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
-    // Frontend navigation only
-    router.push('/brand/dashboard');
+    setErrors({});
+    setIsLoading(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+      });
+      if (error) {
+        setErrors({ form: 'Invalid email or password. Please try again.' });
+        return;
+      }
+      router.push('/brand/dashboard');
+      router.refresh();
+    } catch {
+      setErrors({ form: 'Something went wrong. Please try again.' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -96,9 +113,12 @@ export const BrandLoginPage: React.FC = () => {
                 <span />
                 <a
                   href="#"
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.preventDefault();
-                    alert('Password reset instructions sent to your official email.');
+                    if (!formData.email) { alert('Enter your email above first.'); return; }
+                    const supabase = createClient();
+                    await supabase.auth.resetPasswordForEmail(formData.email.trim().toLowerCase());
+                    alert('Password reset link sent to your email.');
                   }}
                   className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline"
                 >
@@ -127,6 +147,12 @@ export const BrandLoginPage: React.FC = () => {
               />
             </div>
 
+            {errors.form && (
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">
+                {errors.form}
+              </div>
+            )}
+
             <div className="space-y-3 pt-3">
               <Button
                 type="submit"
@@ -135,8 +161,9 @@ export const BrandLoginPage: React.FC = () => {
                 fullWidth
                 icon={<LogIn className="w-4 h-4" />}
                 iconPosition="right"
+                disabled={isLoading}
               >
-                Login to Dashboard
+                {isLoading ? 'Signing in…' : 'Login to Dashboard'}
               </Button>
 
               <Button
