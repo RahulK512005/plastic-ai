@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   Recycle,
@@ -12,9 +12,15 @@ import {
   CheckCircle,
   Sparkles,
   ClipboardList,
+  Calculator,
+  Scale,
+  TrendingUp,
 } from 'lucide-react';
+import { MetricTonPricingModal } from '../components/pricing/MetricTonPricingModal';
 
 export const LandingPage: React.FC = () => {
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState<boolean>(false);
+
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-[#0F172A] font-sans selection:bg-[#ECFDF5] selection:text-[#0F766E] flex flex-col justify-between">
       {/* Navigation Header */}
@@ -32,6 +38,15 @@ export const LandingPage: React.FC = () => {
           </Link>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Metric Ton Pricing Plan Button */}
+            <button
+              onClick={() => setIsPricingModalOpen(true)}
+              className="text-xs sm:text-sm font-bold text-[#0F766E] bg-white hover:bg-[#ECFDF5] border border-[#0F766E]/30 hover:border-[#0F766E] px-3 sm:px-4 py-2.5 rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <Calculator className="w-4 h-4 text-[#0F766E]" />
+              <span>Pricing Plans (MT)</span>
+            </button>
+
             <Link
               href="/register?type=brand"
               className="text-xs sm:text-sm font-bold text-white bg-[#0F766E] hover:bg-[#065F46] px-3 sm:px-4 py-2.5 rounded-xl shadow-md shadow-[#0F766E]/20 transition-all cursor-pointer flex items-center gap-1.5"
@@ -88,23 +103,33 @@ export const LandingPage: React.FC = () => {
           </p>
 
           {/* Primary CTA Buttons */}
-          <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-xl mx-auto">
+          <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-2xl mx-auto">
             <Link
               href="/register?type=brand"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-4 bg-[#0F766E] text-white font-bold text-sm sm:text-base rounded-2xl shadow-lg shadow-[#0F766E]/25 hover:bg-[#065F46] active:scale-[0.99] transition-all hover:shadow-xl cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-[#0F766E] text-white font-bold text-sm sm:text-base rounded-2xl shadow-lg shadow-[#0F766E]/25 hover:bg-[#065F46] active:scale-[0.99] transition-all hover:shadow-xl cursor-pointer"
             >
               <Building2 className="w-5 h-5 text-teal-200" />
               <span>Register as Brand</span>
               <ArrowRight className="w-5 h-5" />
             </Link>
+
             <Link
               href="/register?type=recycler"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-4 bg-white text-[#0F766E] border-2 border-[#D6E8DE] hover:border-[#0F766E] font-bold text-sm sm:text-base rounded-2xl shadow-md hover:bg-[#ECFDF5]/50 active:scale-[0.99] transition-all cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-white text-[#0F766E] border-2 border-[#D6E8DE] hover:border-[#0F766E] font-bold text-sm sm:text-base rounded-2xl shadow-md hover:bg-[#ECFDF5]/50 active:scale-[0.99] transition-all cursor-pointer"
             >
               <Factory className="w-5 h-5 text-[#0F766E]" />
               <span>Register as Recycler</span>
               <ArrowRight className="w-5 h-5" />
             </Link>
+
+            {/* Metric Ton Pricing Plan Button in Hero */}
+            <button
+              onClick={() => setIsPricingModalOpen(true)}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 border-2 border-amber-400/40 font-bold text-sm sm:text-base rounded-2xl shadow-xs active:scale-[0.99] transition-all cursor-pointer"
+            >
+              <Scale className="w-5 h-5 text-amber-600" />
+              <span>Explore Metric Ton Pricing</span>
+            </button>
           </div>
 
           {/* Login Links below CTA buttons */}
@@ -225,6 +250,36 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* Metric Ton Pricing Callout Section */}
+      <section className="py-12 bg-[#0F172A] text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#0F766E]/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="space-y-3 text-center md:text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#ECFDF5]/10 border border-[#ECFDF5]/20 text-teal-300 text-xs font-bold">
+              <Scale className="w-3.5 h-3.5" />
+              <span>Volume-Based Transparent Pricing</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+              Pay Only For The Metric Tons You Process
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
+              Whether you are a Brand managing 25 MT or a Recycler processing 10,000+ MT annually, our tiered metric-ton pricing ensures complete cost predictability with no hidden fees.
+            </p>
+          </div>
+
+          <div className="shrink-0 w-full md:w-auto text-center">
+            <button
+              onClick={() => setIsPricingModalOpen(true)}
+              className="w-full sm:w-auto px-8 py-4 bg-[#0F766E] hover:bg-[#065F46] text-white font-extrabold text-sm sm:text-base rounded-2xl shadow-xl shadow-[#0F766E]/40 active:scale-[0.99] transition-all flex items-center justify-center gap-2.5 mx-auto"
+            >
+              <Calculator className="w-5 h-5 text-teal-200" />
+              <span>Calculate Your Price by Metric Tons</span>
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-[#0F172A] text-slate-400 py-8 px-4 text-xs border-t border-slate-800">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -235,6 +290,13 @@ export const LandingPage: React.FC = () => {
           <p>© 2026 Punarvritt. All rights reserved. CPCB Certified Platform.</p>
         </div>
       </footer>
+
+      {/* Metric Ton Pricing Modal */}
+      <MetricTonPricingModal
+        isOpen={isPricingModalOpen}
+        onClose={() => setIsPricingModalOpen(false)}
+      />
     </div>
   );
 };
+
