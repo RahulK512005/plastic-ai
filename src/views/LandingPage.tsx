@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import {
   Recycle,
@@ -13,17 +13,8 @@ import {
   Sparkles,
   ClipboardList,
 } from 'lucide-react';
-import { RegistrationWizard } from '../components/registration/RegistrationWizard';
 
 export const LandingPage: React.FC = () => {
-  const [isWizardOpen, setIsWizardOpen] = useState(false);
-  const [initialType, setInitialType] = useState<'brand' | 'recycler' | undefined>();
-
-  const openWizard = (type?: 'brand' | 'recycler') => {
-    setInitialType(type);
-    setIsWizardOpen(true);
-  };
-
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-[#0F172A] font-sans selection:bg-[#ECFDF5] selection:text-[#0F766E] flex flex-col justify-between">
       {/* Navigation Header */}
@@ -37,33 +28,40 @@ export const LandingPage: React.FC = () => {
               <span className="font-extrabold text-xl text-[#0F172A] tracking-tight block">
                 Punarvritt
               </span>
-              <span className="text-[10px] font-bold tracking-wider uppercase text-[#0F766E] block -mt-1">
-                Plastic Recycling Marketplace
-              </span>
             </div>
           </Link>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => openWizard()}
-              className="text-xs sm:text-sm font-bold text-white bg-[#0F766E] hover:bg-[#065F46] px-4 py-2.5 rounded-xl shadow-md shadow-[#0F766E]/20 transition-all cursor-pointer flex items-center gap-2"
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              href="/register?type=brand"
+              className="text-xs sm:text-sm font-bold text-white bg-[#0F766E] hover:bg-[#065F46] px-3 sm:px-4 py-2.5 rounded-xl shadow-md shadow-[#0F766E]/20 transition-all cursor-pointer flex items-center gap-1.5"
             >
-              <ClipboardList className="w-4 h-4" />
-              <span>Get Started</span>
-            </button>
+              <Building2 className="w-4 h-4" />
+              <span>Brand Signup</span>
+            </Link>
 
             <Link
-              href="/brand/login"
-              className="hidden sm:inline-flex text-xs sm:text-sm font-semibold text-slate-700 hover:text-slate-900 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
+              href="/register?type=recycler"
+              className="text-xs sm:text-sm font-bold text-[#0F766E] bg-[#ECFDF5] hover:bg-emerald-100 border border-[#D6E8DE] px-3 sm:px-4 py-2.5 rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
             >
-              Brand Login
+              <Factory className="w-4 h-4" />
+              <span>Recycler Signup</span>
             </Link>
-            <Link
-              href="/recycler/login"
-              className="hidden sm:inline-flex text-xs sm:text-sm font-semibold text-[#0F766E] bg-[#ECFDF5] hover:bg-emerald-100 border border-[#D6E8DE] px-3 py-2 rounded-lg transition-colors"
-            >
-              Recycler Login
-            </Link>
+
+            <div className="hidden md:flex items-center gap-2 ml-1 pl-2 border-l border-[#D6E8DE]">
+              <Link
+                href="/brand/login"
+                className="text-xs font-semibold text-slate-700 hover:text-slate-900 px-2.5 py-2 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                Brand Login
+              </Link>
+              <Link
+                href="/recycler/login"
+                className="text-xs font-semibold text-slate-700 hover:text-slate-900 px-2.5 py-2 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                Recycler Login
+              </Link>
+            </div>
           </div>
         </div>
       </nav>
@@ -90,15 +88,23 @@ export const LandingPage: React.FC = () => {
           </p>
 
           {/* Primary CTA Buttons */}
-          <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-lg mx-auto">
-            <button
-              onClick={() => openWizard()}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 bg-[#0F766E] text-white font-bold text-sm sm:text-base rounded-2xl shadow-lg shadow-[#0F766E]/25 hover:bg-[#065F46] active:scale-[0.99] transition-all hover:shadow-xl cursor-pointer"
+          <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-xl mx-auto">
+            <Link
+              href="/register?type=brand"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-4 bg-[#0F766E] text-white font-bold text-sm sm:text-base rounded-2xl shadow-lg shadow-[#0F766E]/25 hover:bg-[#065F46] active:scale-[0.99] transition-all hover:shadow-xl cursor-pointer"
             >
-              <Sparkles className="w-5 h-5 text-amber-300 animate-pulse" />
-              <span>Get Started</span>
+              <Building2 className="w-5 h-5 text-teal-200" />
+              <span>Register as Brand</span>
               <ArrowRight className="w-5 h-5" />
-            </button>
+            </Link>
+            <Link
+              href="/register?type=recycler"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-4 bg-white text-[#0F766E] border-2 border-[#D6E8DE] hover:border-[#0F766E] font-bold text-sm sm:text-base rounded-2xl shadow-md hover:bg-[#ECFDF5]/50 active:scale-[0.99] transition-all cursor-pointer"
+            >
+              <Factory className="w-5 h-5 text-[#0F766E]" />
+              <span>Register as Recycler</span>
+              <ArrowRight className="w-5 h-5" />
+            </Link>
           </div>
 
           {/* Login Links below CTA buttons */}
@@ -218,13 +224,6 @@ export const LandingPage: React.FC = () => {
           </div>
         </div>
       </section>
-
-      {/* Registration Wizard Modal */}
-      <RegistrationWizard
-        isOpen={isWizardOpen}
-        onClose={() => setIsWizardOpen(false)}
-        initialType={initialType}
-      />
 
       {/* Footer */}
       <footer className="bg-[#0F172A] text-slate-400 py-8 px-4 text-xs border-t border-slate-800">

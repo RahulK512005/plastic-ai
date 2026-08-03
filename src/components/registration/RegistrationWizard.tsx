@@ -21,7 +21,7 @@ import { SuccessModal } from './SuccessModal';
 import { PrimaryButton } from './PrimaryButton';
 import { SecondaryButton } from './SecondaryButton';
 import { getRequiredDocuments } from '../../data/pricing';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface RegistrationWizardProps {
   isOpen: boolean;
@@ -64,6 +64,12 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  useEffect(() => {
+    if (initialType && data.registrationType !== initialType) {
+      setRegistrationType(initialType);
+    }
+  }, [initialType, data.registrationType, setRegistrationType]);
+
   if (!isOpen) return null;
 
   // Steps 1 is not shown in the stepper (it's pre-wizard auth)
@@ -72,22 +78,17 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
   const stepperTotal = TOTAL_STEPS - 1; // 7 visible steps
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-0 sm:p-4 md:p-6 overflow-y-auto">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.96, y: 15 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.96, y: 15 }}
-        transition={{ duration: 0.25, ease: 'easeOut' }}
-        className="bg-[#FAFAF8] w-full max-w-6xl h-[100dvh] sm:h-auto sm:max-h-[90vh] sm:rounded-3xl border-0 sm:border border-[#D6E8DE] shadow-2xl flex flex-col overflow-hidden"
-      >
-        <WizardHeader
-          currentStep={stepperStep}
-          totalSteps={stepperTotal}
-          stepTitle={STEP_TITLES[step - 1]}
-          onSaveProgress={saveProgress}
-          onClose={onClose}
-          saveToast={saveToast}
-        />
+    <div className="min-h-screen bg-[#FAFAF8] text-[#0F172A] font-sans flex flex-col justify-between selection:bg-[#ECFDF5] selection:text-[#0F766E]">
+      <div className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-2 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-[#D6E8DE] shadow-xl flex flex-col overflow-hidden min-h-[calc(100vh-4rem)]">
+          <WizardHeader
+            currentStep={stepperStep}
+            totalSteps={stepperTotal}
+            stepTitle={STEP_TITLES[step - 1]}
+            onSaveProgress={saveProgress}
+            onClose={onClose}
+            saveToast={saveToast}
+          />
 
         {/* Only show stepper from step 2 onward */}
         {step > 1 && (
@@ -392,8 +393,9 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
               )}
             </div>
           </div>
+          </div>
         </div>
-      </motion.div>
+      </div>
 
       {isSubmitted && (
         <SuccessModal
