@@ -23,7 +23,22 @@ export const TOTAL_STEPS = 7;
 
 // ── Initial data ─────────────────────────────────────────────────────────────
 
-const initialCompanyInfo: CompanyInfo = {
+const isDev = process.env.NODE_ENV === 'development';
+
+const initialCompanyInfo: CompanyInfo = isDev ? {
+  companyName: 'Acme Recycling Corp',
+  companyEmail: 'contact@acmerecycling.com',
+  mobileNumber: '9876543210',
+  gstNumber: '22AAAAA0000A1Z5',
+  panNumber: 'ABCDE1234F',
+  factoryAddress: '123 Green Industrial Estate',
+  state: 'Maharashtra',
+  city: 'Mumbai',
+  pincode: '400001',
+  companyWebsite: 'https://acmerecycling.com',
+  contactPerson: 'John Doe',
+  designation: 'Operations Director',
+} : {
   companyName: '',
   companyEmail: '',
   mobileNumber: '',
@@ -81,9 +96,9 @@ export function useRegistration() {
   const [data, setData] = useState<RegistrationData>(initialRegistrationData);
 
   // ── Step 1: Account creation state ──────────────────────────────────────────
-  const [accountEmail, setAccountEmail] = useState('');
-  const [accountPassword, setAccountPassword] = useState('');
-  const [accountConfirm, setAccountConfirm] = useState('');
+  const [accountEmail, setAccountEmail] = useState(isDev ? `test_${Math.floor(Math.random() * 10000)}@example.com` : '');
+  const [accountPassword, setAccountPassword] = useState(isDev ? 'Password123!' : '');
+  const [accountConfirm, setAccountConfirm] = useState(isDev ? 'Password123!' : '');
   const [accountLoading, setAccountLoading] = useState(false);
   const [accountError, setAccountError] = useState<string | null>(null);
   // true once supabase.auth.signUp succeeded for this session
@@ -94,7 +109,7 @@ export function useRegistration() {
   // where draft restore overwrites the step that the auth check wants to set.
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       // Restore draft first
       let restoredStep = 1;
       try {
@@ -112,11 +127,11 @@ export function useRegistration() {
         }
       } catch { /* ignore */ }
 
-      const localAuthUser = typeof window !== 'undefined' ? localStorage.getItem('punarvritt_auth_user') : null;
+      const user = session?.user;
 
-      if (user || localAuthUser) {
+      if (user) {
         setIsAuthenticated(true);
-        setAccountEmail(user?.email ?? localAuthUser ?? '');
+        setAccountEmail(user.email ?? '');
         // Authenticated users skip step 1 and resume from their saved step (min 2)
         setStep(Math.max(restoredStep, 2));
       } else {
@@ -124,14 +139,7 @@ export function useRegistration() {
         setStep(1);
       }
     }).catch(() => {
-      const localAuthUser = typeof window !== 'undefined' ? localStorage.getItem('punarvritt_auth_user') : null;
-      if (localAuthUser) {
-        setIsAuthenticated(true);
-        setAccountEmail(localAuthUser);
-        setStep(2);
-      } else {
-        setStep(1);
-      }
+      setStep(1);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -196,9 +204,14 @@ export function useRegistration() {
 
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.signUp({
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email: emailClean,
         password: accountPassword,
+        options: {
+          data: {
+            role: data.registrationType,
+          },
+        },
       });
 
       if (error) {
@@ -207,10 +220,20 @@ export function useRegistration() {
           setAccountLoading(false);
           return false;
         }
-        console.warn('Supabase auth signup notice (using local storage fallback):', error.message);
+        setAccountError(error.message);
+        setAccountLoading(false);
+        return false;
+      }
+
+      if (!signUpData.session) {
+        setAccountError('Signup successful! However, email confirmation is enabled in your Supabase settings. Please check your inbox to verify your email, or disable "Confirm email" in Supabase Auth Dashboard -> Providers -> Email.');
+        setAccountLoading(false);
+        return false;
       }
     } catch (err) {
-      console.warn('Supabase auth fetch exception (using local storage fallback):', err);
+      setAccountError(err instanceof Error ? err.message : 'Auth connection failed.');
+      setAccountLoading(false);
+      return false;
     }
 
     // Persist local account details in localStorage
