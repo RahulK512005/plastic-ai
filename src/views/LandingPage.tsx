@@ -48,7 +48,7 @@ export const LandingPage: React.FC = () => {
             </button>
 
             <Link
-              href="/register?type=brand"
+              href="/register/brand"
               className="text-xs sm:text-sm font-bold text-white bg-[#0F766E] hover:bg-[#065F46] px-3 sm:px-4 py-2.5 rounded-xl shadow-md shadow-[#0F766E]/20 transition-all cursor-pointer flex items-center gap-1.5"
             >
               <Building2 className="w-4 h-4" />
@@ -56,7 +56,7 @@ export const LandingPage: React.FC = () => {
             </Link>
 
             <Link
-              href="/register?type=recycler"
+              href="/register/recycler"
               className="text-xs sm:text-sm font-bold text-[#0F766E] bg-[#ECFDF5] hover:bg-emerald-100 border border-[#D6E8DE] px-3 sm:px-4 py-2.5 rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
             >
               <Factory className="w-4 h-4" />
@@ -105,7 +105,7 @@ export const LandingPage: React.FC = () => {
           {/* Primary CTA Buttons */}
           <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-2xl mx-auto">
             <Link
-              href="/register?type=brand"
+              href="/register/brand"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-[#0F766E] text-white font-bold text-sm sm:text-base rounded-2xl shadow-lg shadow-[#0F766E]/25 hover:bg-[#065F46] active:scale-[0.99] transition-all hover:shadow-xl cursor-pointer"
             >
               <Building2 className="w-5 h-5 text-teal-200" />
@@ -114,7 +114,7 @@ export const LandingPage: React.FC = () => {
             </Link>
 
             <Link
-              href="/register?type=recycler"
+              href="/register/recycler"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-white text-[#0F766E] border-2 border-[#D6E8DE] hover:border-[#0F766E] font-bold text-sm sm:text-base rounded-2xl shadow-md hover:bg-[#ECFDF5]/50 active:scale-[0.99] transition-all cursor-pointer"
             >
               <Factory className="w-5 h-5 text-[#0F766E]" />

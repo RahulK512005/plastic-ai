@@ -4,10 +4,14 @@ import React, { Suspense } from 'react';
 import { RegistrationWizard } from '../components/registration/RegistrationWizard';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-function RegisterContent() {
+interface RegisterPageProps {
+  type?: 'brand' | 'recycler';
+}
+
+function RegisterContent({ type }: RegisterPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const typeParam = searchParams.get('type') as 'brand' | 'recycler' | null;
+  const typeParam = type || (searchParams.get('type') as 'brand' | 'recycler' | null);
 
   const handleClose = () => {
     router.push('/');
@@ -22,10 +26,11 @@ function RegisterContent() {
   );
 }
 
-export const RegisterPage: React.FC = () => {
+export const RegisterPage: React.FC<RegisterPageProps> = ({ type }) => {
   return (
     <Suspense fallback={<div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center font-sans text-slate-500">Loading registration...</div>}>
-      <RegisterContent />
+      <RegisterContent type={type} />
     </Suspense>
   );
 };
+

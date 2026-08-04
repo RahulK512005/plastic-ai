@@ -19,7 +19,7 @@ import { createClient } from '../../utils/supabase/client';
 const STORAGE_KEY = 'punarvritt_registration_draft_v1';
 // Steps: 1=CreateAccount 2=RegistrationType 3=MaterialCategory 4=CompanyInfo
 //         5=Documents 6=Capacity 7=Plan 8=Summary+Payment
-export const TOTAL_STEPS = 8;
+export const TOTAL_STEPS = 7;
 
 // ── Initial data ─────────────────────────────────────────────────────────────
 
@@ -388,10 +388,8 @@ export function useRegistration() {
 
     // Step 1 handled separately in createAccount()
     if (stepToValidate === 2) {
-      if (!data.registrationType) newErrors.registrationType = 'Please select a registration type';
-    } else if (stepToValidate === 3) {
       if (!data.materialCategory) newErrors.materialCategory = 'Please select a material category';
-    } else if (stepToValidate === 4) {
+    } else if (stepToValidate === 3) {
       const c = data.companyInfo;
       if (!c.companyName.trim()) newErrors.companyName = 'Company name is required';
       if (!c.companyEmail.trim()) {
@@ -424,7 +422,7 @@ export function useRegistration() {
       }
       if (!c.contactPerson.trim()) newErrors.contactPerson = 'Contact person name is required';
       if (!c.designation.trim()) newErrors.designation = 'Designation is required';
-    } else if (stepToValidate === 5) {
+    } else if (stepToValidate === 4) {
       const reqDocs = data.registrationType === 'brand'
         ? ['gst', 'pan', 'factory_license', 'coi_cert', 'epr_cert', 'cancelled_cheque']
         : ['gst', 'pan', 'factory_license', 'pollution_cert', 'coi_cert', 'auth_letter', 'cancelled_cheque', 'recycler_cert', 'epr_cert'];
@@ -434,9 +432,9 @@ export function useRegistration() {
       if (missing.length > 0) {
         newErrors.documents = `Please upload all ${reqDocs.length} required mandatory documents before continuing`;
       }
-    } else if (stepToValidate === 6) {
+    } else if (stepToValidate === 5) {
       if (!data.capacityTier) newErrors.capacityTier = 'Please select a capacity tier';
-    } else if (stepToValidate === 7) {
+    } else if (stepToValidate === 6) {
       if (!data.subscriptionPlan) newErrors.subscriptionPlan = 'Please choose a subscription plan';
     }
 

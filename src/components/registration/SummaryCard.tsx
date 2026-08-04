@@ -114,7 +114,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
 
         {/* Capacity & Subscription + Promo + Price Summary */}
         <div className="bg-white rounded-2xl border border-[#D6E8DE] p-6 shadow-xs relative">
-          <button onClick={() => onGoToStep(5)} className="absolute top-5 right-5 p-1.5 text-slate-400 hover:text-[#0F766E] rounded-lg hover:bg-[#ECFDF5] transition-colors cursor-pointer" title="Edit">
+          <button onClick={() => onGoToStep(4)} className="absolute top-5 right-5 p-1.5 text-slate-400 hover:text-[#0F766E] rounded-lg hover:bg-[#ECFDF5] transition-colors cursor-pointer" title="Edit">
             <Edit3 className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-2.5 mb-4 text-[#0F766E] font-bold text-xs uppercase tracking-wider">
@@ -187,7 +187,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
 
         {/* Company Info */}
         <div className="bg-white rounded-2xl border border-[#D6E8DE] p-6 shadow-xs md:col-span-2 relative">
-          <button onClick={() => onGoToStep(3)} className="absolute top-5 right-5 p-1.5 text-slate-400 hover:text-[#0F766E] rounded-lg hover:bg-[#ECFDF5] transition-colors cursor-pointer" title="Edit">
+          <button onClick={() => onGoToStep(2)} className="absolute top-5 right-5 p-1.5 text-slate-400 hover:text-[#0F766E] rounded-lg hover:bg-[#ECFDF5] transition-colors cursor-pointer" title="Edit">
             <Edit3 className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-2.5 mb-4 text-[#0F766E] font-bold text-xs uppercase tracking-wider">
@@ -232,7 +232,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
 
         {/* Documents */}
         <div className="bg-white rounded-2xl border border-[#D6E8DE] p-6 shadow-xs md:col-span-2 relative">
-          <button onClick={() => onGoToStep(4)} className="absolute top-5 right-5 p-1.5 text-slate-400 hover:text-[#0F766E] rounded-lg hover:bg-[#ECFDF5] transition-colors cursor-pointer" title="Edit">
+          <button onClick={() => onGoToStep(3)} className="absolute top-5 right-5 p-1.5 text-slate-400 hover:text-[#0F766E] rounded-lg hover:bg-[#ECFDF5] transition-colors cursor-pointer" title="Edit">
             <Edit3 className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-2.5 mb-4 text-[#0F766E] font-bold text-xs uppercase tracking-wider">
