@@ -7,6 +7,7 @@ import { ArrowLeft, Tag, Loader2, Check, RefreshCw, Info } from 'lucide-react';
 
 const PLANS = ['starter', 'growth', 'enterprise'];
 const TIERS = ['tier1', 'tier2', 'tier3'];
+const ROLES = ['brand', 'recycler'];
 
 function generateCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -28,6 +29,7 @@ export function AdminCreatePromoView() {
   const [validUntil, setValidUntil] = useState('');
   const [selectedPlans, setSelectedPlans] = useState<string[]>([]);
   const [selectedTiers, setSelectedTiers] = useState<string[]>([]);
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +40,9 @@ export function AdminCreatePromoView() {
 
   const toggleTier = (t: string) =>
     setSelectedTiers((prev) => prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]);
+
+  const toggleRole = (r: string) =>
+    setSelectedRoles((prev) => prev.includes(r) ? prev.filter((x) => x !== r) : [...prev, r]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +76,7 @@ export function AdminCreatePromoView() {
           validUntil: validUntil ? new Date(validUntil).toISOString() : null,
           applicablePlans: selectedPlans,
           applicableTiers: selectedTiers,
+          applicableRoles: selectedRoles,
         }),
       });
 
@@ -114,6 +120,7 @@ export function AdminCreatePromoView() {
                 setValidUntil('');
                 setSelectedPlans([]);
                 setSelectedTiers([]);
+                setSelectedRoles([]);
               }}
               className="flex-1 py-3 rounded-xl border border-slate-200 text-sm font-bold text-slate-700 hover:bg-slate-50 cursor-pointer transition-colors flex items-center justify-center gap-2"
             >
@@ -250,6 +257,26 @@ export function AdminCreatePromoView() {
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#0F766E]">
               Restrictions <span className="font-normal text-slate-400 normal-case">(leave empty = applies to all)</span>
             </h3>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-2">Applicable Roles</label>
+              <div className="flex gap-2 flex-wrap">
+                {ROLES.map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => toggleRole(r)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer capitalize ${
+                      selectedRoles.includes(r)
+                        ? 'bg-[#0F766E] text-white border-[#0F766E]'
+                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-[#0F766E]/40'
+                    }`}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-2">Applicable Plans</label>

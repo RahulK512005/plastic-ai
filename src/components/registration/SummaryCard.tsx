@@ -144,6 +144,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
               <PromoCodeInput
                 capacityTier={data.capacityTier}
                 subscriptionPlan={data.subscriptionPlan}
+                registrationType={data.registrationType as 'brand' | 'recycler'}
                 appliedCode={appliedPromoCode}
                 discountAmount={promoDiscountAmount}
                 onApply={onApplyPromo}

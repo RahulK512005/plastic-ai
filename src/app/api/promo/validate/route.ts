@@ -8,6 +8,7 @@ export interface ValidatePromoRequest {
   code: string;
   capacityTier: CapacityTier;
   subscriptionPlan: SubscriptionPlanId;
+  registrationType: 'brand' | 'recycler';
 }
 
 export interface ValidatePromoResponse {
@@ -32,9 +33,9 @@ export async function POST(req: NextRequest) {
     }
 
     const body: ValidatePromoRequest = await req.json();
-    const { code, capacityTier, subscriptionPlan } = body;
+    const { code, capacityTier, subscriptionPlan, registrationType } = body;
 
-    if (!code?.trim() || !capacityTier || !subscriptionPlan) {
+    if (!code?.trim() || !capacityTier || !subscriptionPlan || !registrationType) {
       return NextResponse.json({ valid: false, error: 'Missing required fields.' }, { status: 400 });
     }
 
@@ -83,6 +84,16 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
           valid: false,
           error: `This code is only valid for: ${promo.applicable_tiers.join(', ')} tier(s).`,
+        });
+      }
+    }
+
+    // Check role restriction
+    if (promo.applicable_roles && promo.applicable_roles.length > 0) {
+      if (!promo.applicable_roles.includes(registrationType)) {
+        return NextResponse.json({
+          valid: false,
+          error: `This code is only valid for: ${promo.applicable_roles.join(', ')}s.`,
         });
       }
     }

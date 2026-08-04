@@ -76,18 +76,23 @@ export async function POST(req: NextRequest) {
     }
 
     // 6. Update payment record
-    const { error: paymentUpdateError } = await service
+    const { data: payment, error: paymentUpdateError } = await service
       .from('payments')
       .update({
         razorpay_payment_id,
         razorpay_signature,
         status: 'captured',
       })
-      .eq('razorpay_order_id', razorpay_order_id);
+      .eq('razorpay_order_id', razorpay_order_id)
+      .select('promo_code')
+      .single();
 
     if (paymentUpdateError) {
       // Non-fatal — company row is already updated; log and continue
       console.error('[verify] payment update error:', paymentUpdateError);
+    } else if (payment?.promo_code) {
+      // Increment promo usage counter atomically when payment is verified
+      await service.rpc('increment_promo_usage', { p_code: payment.promo_code });
     }
 
     return NextResponse.json({ success: true, companyId });

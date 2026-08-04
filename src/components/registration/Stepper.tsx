@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'motion/react';
-import { Check, User, Package, Building2, FileText, Scale, CreditCard, ClipboardCheck } from 'lucide-react';
+import { Check, Package, Building2, FileText, Scale, CreditCard, ClipboardCheck } from 'lucide-react';
 
 interface StepperProps {
   currentStep: number;
@@ -11,16 +11,15 @@ interface StepperProps {
 }
 
 const STEP_ITEMS = [
-  { step: 1, label: 'Type', title: 'Choose Type', icon: User },
-  { step: 2, label: 'Material', title: 'Select Material', icon: Package },
-  { step: 3, label: 'Company', title: 'Company Details', icon: Building2 },
-  { step: 4, label: 'Documents', title: 'Upload Documents', icon: FileText },
-  { step: 5, label: 'Capacity', title: 'Annual Capacity', icon: Scale },
-  { step: 6, label: 'Plan', title: 'Subscription Plan', icon: CreditCard },
-  { step: 7, label: 'Summary', title: 'Review & Submit', icon: ClipboardCheck },
+  { step: 1, label: 'Material', title: 'Select Material', icon: Package },
+  { step: 2, label: 'Company', title: 'Company Details', icon: Building2 },
+  { step: 3, label: 'Documents', title: 'Upload Documents', icon: FileText },
+  { step: 4, label: 'Capacity', title: 'Annual Capacity', icon: Scale },
+  { step: 5, label: 'Plan', title: 'Subscription Plan', icon: CreditCard },
+  { step: 6, label: 'Summary', title: 'Review & Submit', icon: ClipboardCheck },
 ];
 
-export const Stepper: React.FC<StepperProps> = ({ currentStep, onStepClick }) => {
+export const Stepper: React.FC<StepperProps> = ({ currentStep, totalSteps, onStepClick }) => {
   const progressPercent = Math.round(((currentStep - 1) / (STEP_ITEMS.length - 1)) * 100);
 
   return (
@@ -92,7 +91,7 @@ export const Stepper: React.FC<StepperProps> = ({ currentStep, onStepClick }) =>
         {/* Mobile active step label */}
         <div className="mt-2 text-center md:hidden">
           <span className="text-xs font-bold text-[#0F766E]">
-            Step {currentStep} of 7: {STEP_ITEMS[currentStep - 1].title}
+            Step {currentStep} of {totalSteps}: {STEP_ITEMS[currentStep - 1]?.title}
           </span>
         </div>
       </div>

@@ -13,6 +13,7 @@ export interface CreatePromoRequest {
   validUntil?: string | null;
   applicablePlans?: string[];
   applicableTiers?: string[];
+  applicableRoles?: string[];
 }
 
 /** Generates a random readable promo code like PNVR-A3KX9 */
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest) {
       validUntil,
       applicablePlans,
       applicableTiers,
+      applicableRoles,
     } = body;
 
     // Validate
@@ -87,6 +89,7 @@ export async function POST(req: NextRequest) {
         valid_until: validUntil || null,
         applicable_plans: applicablePlans?.length ? applicablePlans : null,
         applicable_tiers: applicableTiers?.length ? applicableTiers : null,
+        applicable_roles: applicableRoles?.length ? applicableRoles : null,
         is_active: true,
         created_by: user.id,
       })
