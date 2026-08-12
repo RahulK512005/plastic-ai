@@ -31,7 +31,6 @@ interface RegistrationWizardProps {
 
 const STEP_TITLES = [
   'Create Your Account',                  // 1
-<<<<<<< HEAD
   'Choose Registration Type & Role',      // 2
   'Company Information & Identification', // 3
   'Upload Required Compliance Documents', // 4
@@ -39,14 +38,6 @@ const STEP_TITLES = [
   'Select Annual Processing Capacity',     // 6
   'Select Subscription Plan',              // 7
   'Registration Summary & Submission',     // 8
-=======
-  'Choose Primary Material Category',      // 2
-  'Company Information & Identification', // 3
-  'Upload Required Compliance Documents', // 4
-  'Select Annual Processing Capacity',     // 5
-  'Select Subscription Plan',              // 6
-  'Registration Summary & Submission',     // 7
->>>>>>> origin/main
 ];
 
 export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
@@ -299,7 +290,6 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
                 </div>
               )}
 
-<<<<<<< HEAD
               {/* ── STEP 5: Material Category ─────────────────────────────── */}
               {step === 5 && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-5xl mx-auto">
@@ -337,15 +327,6 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
 
               {/* ── STEP 7: Subscription Plan ────────────────────────────── */}
               {step === 7 && (
-=======
-              {/* ── STEP 5: Capacity ──────────────────────────────────────── */}
-              {step === 5 && (
-                <CapacityCard selectedTier={data.capacityTier} onSelect={setCapacityTier} />
-              )}
-
-              {/* ── STEP 6: Plan ─────────────────────────────────────────── */}
-              {step === 6 && (
->>>>>>> origin/main
                 <PricingCard
                   capacityTier={data.capacityTier}
                   selectedPlan={data.subscriptionPlan}
@@ -353,11 +334,11 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
                 />
               )}
 
-              {/* ── STEP 7: Summary + Payment ─────────────────────────────── */}
-              {step === 7 && (
+              {/* ── STEP 8: Summary + Payment ─────────────────────────────── */}
+              {step === 8 && (
                 <SummaryCard
                   data={data}
-                  onGoToStep={(s) => goToStep(s + 1)} // SummaryCard uses 1-based stepper indices (1=Material, 2=Company, 3=Docs...)
+                  onGoToStep={(s) => goToStep(s + 1)}
                   appliedPromoCode={appliedPromoCode}
                   promoDiscountAmount={promoDiscountAmount}
                   promoFinalAmount={promoFinalAmount}
@@ -372,7 +353,7 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
 
         {/* Footer */}
         <div className="sticky bottom-0 z-20 border-t border-[#D6E8DE] bg-white px-4 sm:px-8 py-3.5 sm:py-4 flex flex-col gap-2 shadow-md sm:shadow-none">
-          {step === 7 && paymentError && (
+          {step === 8 && paymentError && (
             <div className="flex items-start gap-2.5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
               <span>{paymentError}</span>

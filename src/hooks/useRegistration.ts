@@ -420,11 +420,7 @@ export function useRegistration() {
 
     // Step 1 handled separately in createAccount()
     if (stepToValidate === 2) {
-<<<<<<< HEAD
       if (!data.registrationType) newErrors.registrationType = 'Please select a registration type';
-=======
-      if (!data.materialCategory) newErrors.materialCategory = 'Please select a material category';
->>>>>>> origin/main
     } else if (stepToValidate === 3) {
       const c = data.companyInfo;
       if (!c.companyName.trim()) newErrors.companyName = 'Company name is required';
