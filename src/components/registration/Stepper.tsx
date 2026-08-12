@@ -20,7 +20,7 @@ const STEP_ITEMS = [
   { step: 7, label: 'Summary', title: 'Review & Submit', icon: ClipboardCheck },
 ];
 
-export const Stepper: React.FC<StepperProps> = ({ currentStep, onStepClick }) => {
+export const Stepper: React.FC<StepperProps> = ({ currentStep, totalSteps, onStepClick }) => {
   const progressPercent = Math.round(((currentStep - 1) / (STEP_ITEMS.length - 1)) * 100);
 
   return (
@@ -92,7 +92,7 @@ export const Stepper: React.FC<StepperProps> = ({ currentStep, onStepClick }) =>
         {/* Mobile active step label */}
         <div className="mt-2 text-center md:hidden">
           <span className="text-xs font-bold text-[#0F766E]">
-            Step {currentStep} of 7: {STEP_ITEMS[currentStep - 1].title}
+            Step {currentStep} of {totalSteps}: {STEP_ITEMS[currentStep - 1]?.title}
           </span>
         </div>
       </div>

@@ -8,6 +8,7 @@ import type { ValidatePromoResponse } from '../../app/api/promo/validate/route';
 interface PromoCodeInputProps {
   capacityTier: CapacityTier;
   subscriptionPlan: SubscriptionPlanId;
+  registrationType: 'brand' | 'recycler';
   appliedCode: string | null;
   discountAmount: number;        // paise
   onApply: (code: string, discountAmount: number, finalAmount: number, originalAmount: number) => void;
@@ -25,6 +26,7 @@ function formatPaise(paise: number): string {
 export const PromoCodeInput: React.FC<PromoCodeInputProps> = ({
   capacityTier,
   subscriptionPlan,
+  registrationType,
   appliedCode,
   discountAmount,
   onApply,
@@ -47,6 +49,7 @@ export const PromoCodeInput: React.FC<PromoCodeInputProps> = ({
           code: inputValue.trim().toUpperCase(),
           capacityTier,
           subscriptionPlan,
+          registrationType,
         }),
       });
 

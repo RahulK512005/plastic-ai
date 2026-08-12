@@ -96,7 +96,8 @@ export async function POST(req: NextRequest) {
         (!promo.valid_until || new Date(promo.valid_until) >= new Date()) &&
         (promo.max_uses === null || promo.current_uses < promo.max_uses) &&
         (!promo.applicable_plans?.length || promo.applicable_plans.includes(subscriptionPlan)) &&
-        (!promo.applicable_tiers?.length || promo.applicable_tiers.includes(capacityTier))
+        (!promo.applicable_tiers?.length || promo.applicable_tiers.includes(capacityTier)) &&
+        (!promo.applicable_roles?.length || promo.applicable_roles.includes(registrationType))
       ) {
         if (promo.discount_type === 'percentage') {
           discountAmount = Math.round((originalAmount * promo.discount_value) / 100);
@@ -177,10 +178,7 @@ export async function POST(req: NextRequest) {
       console.error('[create-order] insert payment error:', paymentError);
     }
 
-    // 8. Increment promo usage counter atomically
-    if (validatedPromoCode) {
-      await service.rpc('increment_promo_usage', { p_code: validatedPromoCode });
-    }
+
 
     return NextResponse.json({
       orderId: order.id,

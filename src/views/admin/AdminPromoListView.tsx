@@ -31,6 +31,7 @@ interface PromoCode {
   is_active: boolean;
   applicable_plans: string[] | null;
   applicable_tiers: string[] | null;
+  applicable_roles: string[] | null;
   created_at: string;
 }
 
@@ -229,6 +230,9 @@ export function AdminPromoListView() {
                         ) : null}
                         {promo.applicable_tiers?.length ? (
                           <span>Tiers: <b className="text-slate-600">{promo.applicable_tiers.join(', ')}</b></span>
+                        ) : null}
+                        {promo.applicable_roles?.length ? (
+                          <span>Roles: <b className="text-slate-600 capitalize">{promo.applicable_roles.join(', ')}</b></span>
                         ) : null}
                       </div>
                     </div>
