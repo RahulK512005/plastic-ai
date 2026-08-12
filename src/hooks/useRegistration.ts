@@ -40,6 +40,7 @@ const initialCompanyInfo: CompanyInfo = {
 
 const initialRegistrationData: RegistrationData = {
   registrationType: 'brand',
+  brandSubRole: 'brand_admin',
   materialCategory: 'plastic',
   companyInfo: initialCompanyInfo,
   documents: {
@@ -54,6 +55,8 @@ const initialRegistrationData: RegistrationData = {
     recycler_cert: null,
   },
   capacityTier: 'tier2',
+  plasticCapacityTier: 'tier2',
+  metalCapacityTier: 'tier2',
   subscriptionPlan: 'growth',
 };
 
@@ -252,6 +255,10 @@ export function useRegistration() {
     });
   }, []);
 
+  const setBrandSubRole = (subRole: 'brand_admin' | 'brand_employee') => {
+    setData((prev) => ({ ...prev, brandSubRole: subRole }));
+  };
+
   const setMaterialCategory = (material: MaterialCategory) => {
     setData((prev) => ({ ...prev, materialCategory: material }));
     setErrors((prev) => ({ ...prev, materialCategory: '' }));
@@ -263,6 +270,8 @@ export function useRegistration() {
   };
 
   const setCapacityTier = (tier: CapacityTier) => setData((prev) => ({ ...prev, capacityTier: tier }));
+  const setPlasticCapacityTier = (tier: CapacityTier) => setData((prev) => ({ ...prev, plasticCapacityTier: tier }));
+  const setMetalCapacityTier = (tier: CapacityTier) => setData((prev) => ({ ...prev, metalCapacityTier: tier }));
   const setSubscriptionPlan = (plan: SubscriptionPlanId) => setData((prev) => ({ ...prev, subscriptionPlan: plan }));
 
   // ── Document Upload — real Supabase Storage ──────────────────────────────────
@@ -390,8 +399,6 @@ export function useRegistration() {
     if (stepToValidate === 2) {
       if (!data.registrationType) newErrors.registrationType = 'Please select a registration type';
     } else if (stepToValidate === 3) {
-      if (!data.materialCategory) newErrors.materialCategory = 'Please select a material category';
-    } else if (stepToValidate === 4) {
       const c = data.companyInfo;
       if (!c.companyName.trim()) newErrors.companyName = 'Company name is required';
       if (!c.companyEmail.trim()) {
@@ -424,7 +431,7 @@ export function useRegistration() {
       }
       if (!c.contactPerson.trim()) newErrors.contactPerson = 'Contact person name is required';
       if (!c.designation.trim()) newErrors.designation = 'Designation is required';
-    } else if (stepToValidate === 5) {
+    } else if (stepToValidate === 4) {
       const reqDocs = data.registrationType === 'brand'
         ? ['gst', 'pan', 'factory_license', 'coi_cert', 'epr_cert', 'cancelled_cheque']
         : ['gst', 'pan', 'factory_license', 'pollution_cert', 'coi_cert', 'auth_letter', 'cancelled_cheque', 'recycler_cert', 'epr_cert'];
@@ -434,8 +441,15 @@ export function useRegistration() {
       if (missing.length > 0) {
         newErrors.documents = `Please upload all ${reqDocs.length} required mandatory documents before continuing`;
       }
+    } else if (stepToValidate === 5) {
+      if (!data.materialCategory) newErrors.materialCategory = 'Please select a material category';
     } else if (stepToValidate === 6) {
-      if (!data.capacityTier) newErrors.capacityTier = 'Please select a capacity tier';
+      if (data.materialCategory === 'plastic_and_metal') {
+        if (!data.plasticCapacityTier) newErrors.plasticCapacityTier = 'Please select a plastic capacity tier';
+        if (!data.metalCapacityTier) newErrors.metalCapacityTier = 'Please select a metal capacity tier';
+      } else {
+        if (!data.capacityTier) newErrors.capacityTier = 'Please select a capacity tier';
+      }
     } else if (stepToValidate === 7) {
       if (!data.subscriptionPlan) newErrors.subscriptionPlan = 'Please choose a subscription plan';
     }
@@ -669,9 +683,12 @@ export function useRegistration() {
     removePromoCode,
     // setters
     setRegistrationType,
+    setBrandSubRole,
     setMaterialCategory,
     updateCompanyInfo,
     setCapacityTier,
+    setPlasticCapacityTier,
+    setMetalCapacityTier,
     setSubscriptionPlan,
     uploadDocument,
     removeDocument,

@@ -30,14 +30,14 @@ interface RegistrationWizardProps {
 }
 
 const STEP_TITLES = [
-  'Create Your Account',               // 1
-  'Choose Registration Type',           // 2
-  'Choose Primary Material Category',   // 3
-  'Company Information & Identification', // 4
-  'Upload Required Compliance Documents', // 5
-  'Select Annual Processing Capacity',  // 6
-  'Select Subscription Plan',           // 7
-  'Registration Summary & Submission',  // 8
+  'Create Your Account',                  // 1
+  'Choose Registration Type & Role',      // 2
+  'Company Information & Identification', // 3
+  'Upload Required Compliance Documents', // 4
+  'Choose Primary Material Category',      // 5
+  'Select Annual Processing Capacity',     // 6
+  'Select Subscription Plan',              // 7
+  'Registration Summary & Submission',     // 8
 ];
 
 export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
@@ -54,8 +54,8 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
     setAccountEmail, setAccountPassword, setAccountConfirm,
     appliedPromoCode, promoDiscountAmount, promoFinalAmount, promoOriginalAmount,
     applyPromoCode, removePromoCode,
-    setRegistrationType, setMaterialCategory, updateCompanyInfo,
-    setCapacityTier, setSubscriptionPlan,
+    setRegistrationType, setBrandSubRole, setMaterialCategory, updateCompanyInfo,
+    setCapacityTier, setPlasticCapacityTier, setMetalCapacityTier, setSubscriptionPlan,
     uploadDocument, removeDocument,
     nextStep, prevStep, goToStep,
     saveProgress, submitRegistration, resetWizard,
@@ -235,7 +235,7 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
                 </div>
               )}
 
-              {/* ── STEP 2: Registration Type ─────────────────────────────── */}
+              {/* ── STEP 2: Registration Type & Role ──────────────────────── */}
               {step === 2 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                   <RegistrationCard
@@ -243,6 +243,8 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
                     selected={data.registrationType === 'brand'}
                     onSelect={setRegistrationType}
                     onContinue={nextStep}
+                    brandSubRole={data.brandSubRole}
+                    onSelectBrandSubRole={setBrandSubRole}
                   />
                   <RegistrationCard
                     type="recycler"
@@ -253,24 +255,8 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
                 </div>
               )}
 
-              {/* ── STEP 3: Material Category ─────────────────────────────── */}
+              {/* ── STEP 3: Company Info ──────────────────────────────────── */}
               {step === 3 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
-                  <MaterialCard
-                    material="plastic"
-                    selected={data.materialCategory === 'plastic'}
-                    onSelect={setMaterialCategory}
-                  />
-                  <MaterialCard
-                    material="metal"
-                    selected={data.materialCategory === 'metal'}
-                    onSelect={setMaterialCategory}
-                  />
-                </div>
-              )}
-
-              {/* ── STEP 4: Company Info ──────────────────────────────────── */}
-              {step === 4 && (
                 <CompanyForm
                   companyInfo={data.companyInfo}
                   onChange={updateCompanyInfo}
@@ -278,8 +264,8 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
                 />
               )}
 
-              {/* ── STEP 5: Document Upload ───────────────────────────────── */}
-              {step === 5 && (
+              {/* ── STEP 4: Document Upload ───────────────────────────────── */}
+              {step === 4 && (
                 <div className="space-y-4">
                   {errors.documents && (
                     <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold">
@@ -304,12 +290,42 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
                 </div>
               )}
 
-              {/* ── STEP 6: Capacity ──────────────────────────────────────── */}
-              {step === 6 && (
-                <CapacityCard selectedTier={data.capacityTier} onSelect={setCapacityTier} />
+              {/* ── STEP 5: Material Category ─────────────────────────────── */}
+              {step === 5 && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-5xl mx-auto">
+                  <MaterialCard
+                    material="plastic"
+                    selected={data.materialCategory === 'plastic'}
+                    onSelect={setMaterialCategory}
+                  />
+                  <MaterialCard
+                    material="metal"
+                    selected={data.materialCategory === 'metal'}
+                    onSelect={setMaterialCategory}
+                  />
+                  <MaterialCard
+                    material="plastic_and_metal"
+                    selected={data.materialCategory === 'plastic_and_metal'}
+                    onSelect={setMaterialCategory}
+                  />
+                </div>
               )}
 
-              {/* ── STEP 7: Plan ─────────────────────────────────────────── */}
+              {/* ── STEP 6: Capacity Tier ─────────────────────────────────── */}
+              {step === 6 && (
+                <CapacityCard
+                  registrationType={data.registrationType}
+                  materialCategory={data.materialCategory}
+                  selectedTier={data.capacityTier}
+                  onSelect={setCapacityTier}
+                  plasticTier={data.plasticCapacityTier}
+                  metalTier={data.metalCapacityTier}
+                  onSelectPlasticTier={setPlasticCapacityTier}
+                  onSelectMetalTier={setMetalCapacityTier}
+                />
+              )}
+
+              {/* ── STEP 7: Subscription Plan ────────────────────────────── */}
               {step === 7 && (
                 <PricingCard
                   capacityTier={data.capacityTier}
